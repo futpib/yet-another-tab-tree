@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
-  "name": "Universal downloader",
-  "description": "Download (almost) any media on any web page",
+  "name": "Yet another tab tree",
+  "description": "Tab tree like \"Tree style tabs\" and others",
   "version": "1.4",
   "applications": {
     "gecko": {
@@ -13,6 +13,11 @@
     "scripts": ["background.js"]
   },
 
+  "sidebar_action": {
+    "default_title": "Yet another tab tree",
+    "default_panel": "sidebar.html"
+  },
+
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
@@ -20,5 +25,5 @@
     }
   ],
 
-  "permissions": ["webRequest", "<all_urls>", "menus", "downloads", "tabs",  "webNavigation", "clipboardWrite"]
+  "permissions": ["tabs"]
 }

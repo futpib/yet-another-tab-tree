@@ -1,5 +1,5 @@
 {
-  "name": "universal-downloader",
+  "name": "yet-another-tab-tree",
   "version": "1.0.0",
   "main": "index.js",
   "license": "GPL-3.0+",
@@ -22,16 +22,13 @@
     "xo": "^0.23.0"
   },
   "dependencies": {
-    "cuid": "^2.1.4",
-    "lru_map": "^0.3.3",
-    "parse-domain": "^2.1.7",
-    "r-dom": "^2.4.0",
-    "ramda": "^0.26.1",
-    "react": "^16.6.3",
-    "react-dom": "^16.6.3",
-    "react-redux": "^6.0.0",
+    "preact": "^8.4.2",
+    "preact-r-dom": "^2.4.0",
+    "preact-redux": "^2.0.3",
     "redux": "^4.0.1",
-    "whatwg-url": "^7.0.0"
+    "redux-actions": "^2.6.4",
+    "reselect": "^4.0.0",
+    "sanctuary": "^0.15.0"
   },
   "xo": {
     "extends": [

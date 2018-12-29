@@ -8,7 +8,7 @@ const dist = path.join(path.resolve(__dirname), 'dist');
 module.exports = {
 	entry: {
 		background: './background.js',
-		content: './content.js',
+		sidebar: './sidebar.js',
 	},
 
 	output: {
@@ -27,6 +27,7 @@ module.exports = {
 			{ from: 'manifest.json', to: dist },
 			{ from: '*.html', to: dist },
 			{ from: '*.css', to: dist },
+			{ from: 'resources/**/*', to: dist },
 		]),
 	],
 

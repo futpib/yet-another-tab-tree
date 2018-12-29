@@ -1,4 +1,116 @@
 body {
-    background: -moz-dialog;
-    color: -moz-dialogtext;
+	background: -moz-dialog;
+	color: -moz-dialogtext;
+}
+
+.tree-tab {
+	position: relative;
+	display: flex;
+	align-items: center;
+	height: 33px;
+	padding: 6px;
+}
+
+.tree-tab:after, .tree-tab:before {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	margin: 0 6px;
+	content: ' ';
+	background: currentColor;
+	opacity: 0.3;
+}
+
+.tree-tab:hover:after, .tree-tab:hover:before {
+	margin: 0;
+}
+
+.tree-tab:before {
+	position: absolute;
+	right: initial;
+	left: -1px;
+	margin: 6px 0;
+	width: 1px;
+}
+
+.tree-tab:after {
+	position: absolute;
+	top: initial;
+	bottom: -1px;
+	margin: 0 6px;
+	height: 1px;
+}
+
+.tree-tab:hover {
+	background: rgba(255,255,255,.15);
+}
+
+.tree-tab-active:after, .tree-tab-active:before {
+	margin: 0;
+}
+
+.tree-tab-active {
+	background: rgba(255,255,255,.15);
+}
+
+.tree-tab-collapsed {
+	flex-shrink: 0;
+	text-align: center;
+	width: 16px;
+	height: 16px;
+}
+
+.tree-tab-icon {
+	flex-shrink: 0;
+	width: 16px;
+	height: 16px;
+	margin-right: 6px;
+}
+
+.tree-tab-title {
+	flex-grow: 1;
+	white-space: nowrap;
+	overflow: hidden;
+	mask-image: linear-gradient(to left, transparent, black 2em);
+}
+
+.tree-tab-button {
+	flex-shrink: 0;
+	width: 16px;
+	height: 16px;
+	opacity: .85;
+}
+
+.tree-tab-button:hover {
+	opacity: 1;
+}
+
+.tree-tab-mute-button {
+	mask: url('./resources/icons/tab-audio-playing.svg');
+	background: -moz-dialogtext;
+	display: none;
+}
+
+.tree-tab-mute-button-audible {
+	display: initial;
+}
+
+.tree-tab-mute-button-muted {
+	display: initial;
+	mask: url('./resources/icons/tab-audio-muted.svg');
+}
+
+.tree-tab-close-button {
+	mask: url('./resources/icons/close.svg') center;
+	background: -moz-dialogtext;
+}
+
+.tree-child-nodes {
+	padding-left: 12px;
+}
+
+.tree-child-nodes-root {
+	padding-left: 0;
 }
