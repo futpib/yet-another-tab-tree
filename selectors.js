@@ -3,8 +3,10 @@ const S = require('sanctuary');
 
 const { createSelector } = require('reselect');
 
+const getTabs = s => s.tabs;
+
 const getTabsForWindowId = windowId => createSelector(
-	s => s.tabs,
+	getTabs,
 	S.filter(tab => tab.windowId === windowId),
 );
 
@@ -48,6 +50,7 @@ const getTabsTreeForWindowId = windowId => {
 };
 
 module.exports = {
+	getTabs,
 	getTabsForWindowId,
 	getTabsTreeForWindowId,
 };

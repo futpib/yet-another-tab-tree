@@ -55,6 +55,20 @@ body {
 	background: rgba(255,255,255,.15);
 }
 
+.tree-tab-dragovered-into:before, .tree-tab-dragovered-after:after {
+	margin: 0;
+	background: highlight;
+	opacity: 1;
+}
+
+.tree-tab-dragovered-into:before {
+	width: 2px;
+}
+
+.tree-tab-dragovered-after:after {
+	height: 2px;
+}
+
 .tree-tab-collapsed {
 	flex-shrink: 0;
 	text-align: center;

@@ -2,20 +2,38 @@
 
 const S = require('sanctuary');
 
-const { Component, render } = require('preact');
-const { Provider, connect } = require('preact-redux');
-const r = require('preact-r-dom');
+const { Component, render, createRef } = require('inferno');
+const { Provider, connect } = require('inferno-redux');
+const r = require('inferno-r-dom');
 
 const { bindActionCreators } = require('redux');
 
 const { createStore } = require('./store');
-const { getTabsTreeForWindowId } = require('./selectors');
+const {
+	getTabsTreeForWindowId,
+} = require('./selectors');
 const {
 	tabs: {
+		move,
 		update,
+	},
+
+	collapsed: {
 		toggleCollapsed,
 	},
+
+	nesting: {
+		setParent,
+	},
+
+	drag: {
+		dragOver,
+		dragLeave,
+	},
 } = require('./actions');
+
+const dragFormatNamespace = s => 'github.com/futpib/yet-another-tab-tree#' + s;
+const DRAG_FORMAT_DRAGGED_TAB_ID = dragFormatNamespace('draggedTabId');
 
 const Root = () => r(Provider, {
 	store: createStore(),
@@ -37,7 +55,7 @@ class WindowIdProvider extends Component {
 		if (!windowId) {
 			return r.div();
 		}
-		return this.props.children[0](windowId);
+		return this.props.children(windowId);
 	}
 }
 
@@ -53,42 +71,187 @@ const TreeChildNodes = ({ childNodes, root }) => r.div({
 		'tree-child-nodes': true,
 		'tree-child-nodes-root': root,
 	},
-}, S.map(node => r(TreeNode, { node }))(childNodes));
+}, S.pipe([
+	S.sortBy(S.props([ 'tab', 'index' ])),
+	S.map(node => r(TreeNode, { key: node.tab.id, node })),
+])(childNodes));
 
 const TreeNode = connect(
 	(state, { node: { tab } }) => ({
 		collapsed: state.collapsed[tab.id],
 	}),
-)(({ node: { tab, childNodes }, collapsed }) => r.div({
-	className: 'tree-node',
-}, [
-	r(TreeTab, { tab, collapsed, hasChildNodes: childNodes.length > 0 }),
-	!collapsed && r(TreeChildNodes, { childNodes }),
-]));
+)(class TreeNode_ extends Component {
+	constructor(props) {
+		super(props);
+
+		this.ref = createRef();
+	}
+
+	render() {
+		const { node: { tab, childNodes }, collapsed } = this.props;
+
+		return r.div({
+			ref: this.ref,
+			className: 'tree-node',
+		}, [
+			r(TreeTab, {
+				nodeRef: this.ref,
+				tab,
+				collapsed,
+				hasChildNodes: childNodes.length > 0,
+			}),
+			!collapsed && r(TreeChildNodes, { childNodes }),
+		]);
+	}
+});
+
+const workaround = c => props => r(c, props);
 
 const TreeTab = connect(
-	null,
+	({ drag: { targetTabId, targetTabIsHovered, targetInsertionMode }, tabs, nesting }) => ({
+		targetTab: tabs[targetTabId],
+		targetTabParentId: nesting[targetTabId],
+		targetTabIsHovered,
+		targetInsertionMode,
+	}),
 	dispatch => bindActionCreators({
+		move,
 		update,
+
+		setParent,
+
+		dragOver,
+		dragLeave,
 	}, dispatch),
-)(({ tab, collapsed, hasChildNodes, update }) => r.div({
-	classSet: {
-		'tree-tab': true,
-		'tree-tab-active': tab.active,
-	},
-	draggable: true,
-	onClick: () => update(tab.id, { active: true }),
-	onDragStart: e => {
-		console.log(e);
-		e.dataTransfer.setDragImage(e.target, 0, 0);
-	},
-}, [
-	hasChildNodes && r(TreeTabCollapsed, { tabId: tab.id, collapsed }),
-	r(TreeTabIcon, tab),
-	r(TreeTabTitle, tab),
-	r(TreeTabMuteButton, tab),
-	r(TreeTabCloseButton, tab),
-]));
+)(workaround(class TreeTab_ extends Component {
+	constructor(props) {
+		super(props);
+
+		this.ref = createRef();
+
+		this.state = {};
+	}
+
+	static getDerivedStateFromProps(props) {
+		return {
+			dragVerticalSplits: props.hasChildNodes ?
+				[ 'after' ] :
+				[ 'into', 1 / 2, 'after' ],
+		};
+	}
+
+	getInsertionMode(e) {
+		const { clientY } = e;
+		const { offsetTop, offsetHeight } = this.ref.current;
+		const y = (clientY - offsetTop) / offsetHeight;
+
+		let dragovered = null;
+		for (const a of this.state.dragVerticalSplits) {
+			if (typeof a === 'number') {
+				if (a > y) {
+					break;
+				}
+			} else {
+				dragovered = a;
+			}
+		}
+
+		return dragovered;
+	}
+
+	render() {
+		const {
+			nodeRef,
+			tab,
+			collapsed,
+			hasChildNodes,
+
+			targetTab,
+			targetTabIsHovered,
+			targetTabParentId,
+			targetInsertionMode,
+
+			update,
+			move,
+
+			setParent,
+
+			dragOver,
+			dragLeave,
+		} = this.props;
+
+		const isDragTarget = targetTab === tab;
+
+		return r.div({
+			ref: this.ref,
+			classSet: {
+				'tree-tab': true,
+				'tree-tab-active': tab.active,
+				'tree-tab-attention': tab.attention,
+				[`tree-tab-dragovered-${targetInsertionMode}`]: isDragTarget && targetTabIsHovered,
+			},
+			draggable: true,
+			onClick: () => update(tab.id, { active: true }),
+
+			onDragStart: e => {
+				const image = hasChildNodes ? nodeRef.current : this.ref.current;
+				e.dropEffect = 'move';
+				e.dataTransfer.setData(DRAG_FORMAT_DRAGGED_TAB_ID, tab.id);
+				e.dataTransfer.setDragImage(image, 0, 0);
+			},
+			onDragEnd: e => {
+				const tabId = e.dataTransfer.getData(DRAG_FORMAT_DRAGGED_TAB_ID);
+				if (!tabId) {
+					return;
+				}
+				if (!targetTab) {
+					return;
+				}
+				if (targetInsertionMode === 'into') {
+					setParent({
+						tabId: tab.id,
+						parentTabId: targetTab.id,
+					});
+					move(tab.id, {
+						index: targetTab.index + 1,
+						windowId: tab.windowId,
+					});
+				} else if (targetInsertionMode === 'after') {
+					setParent({
+						tabId: tab.id,
+						parentTabId: targetTabParentId,
+					});
+					move(tab.id, {
+						index: targetTab.index + 1,
+						windowId: tab.windowId,
+					});
+				}
+			},
+
+			onDragOver: e => {
+				const tabId = e.dataTransfer.getData(DRAG_FORMAT_DRAGGED_TAB_ID);
+				if (!tabId) {
+					return;
+				}
+				const insertionMode = this.getInsertionMode(e);
+				dragOver({ tabId: tab.id, insertionMode });
+			},
+			onDragLeave: e => {
+				const tabId = e.dataTransfer.getData(DRAG_FORMAT_DRAGGED_TAB_ID);
+				if (!tabId) {
+					return;
+				}
+				dragLeave({ tabId: tab.id });
+			},
+		}, [
+			hasChildNodes && r(TreeTabCollapsed, { tabId: tab.id, collapsed }),
+			r(TreeTabIcon, tab),
+			r(TreeTabTitle, tab),
+			r(TreeTabMuteButton, tab),
+			r(TreeTabCloseButton, tab),
+		]);
+	}
+}));
 
 const TreeTabCollapsed = connect(
 	null,

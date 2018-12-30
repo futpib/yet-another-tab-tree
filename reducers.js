@@ -10,6 +10,11 @@ const initialState = {
 	tabs: {},
 	nesting: {}, // Map ChildTabId ParentTabId
 	collapsed: {},
+	drag: {
+		targetTabId: null,
+		targetTabIsHovered: false,
+		targetInsertionMode: null,
+	},
 };
 
 const reducer = combineReducers({
@@ -38,6 +43,25 @@ const reducer = combineReducers({
 				}
 				return Object.assign({}, tab, { highlighted });
 			})(state),
+		[actions.tabs.moved]: (state, { payload: { tabId, moveInfo: { windowId, fromIndex, toIndex } } }) =>
+			S.map(tab => {
+				if (tab.windowId !== windowId) {
+					return tab;
+				}
+				if (tab.id === tabId) {
+					return Object.assign({}, tab, { index: toIndex });
+				}
+				if (fromIndex < toIndex) {
+					if (fromIndex < tab.index && tab.index <= toIndex) {
+						return Object.assign({}, tab, { index: tab.index - 1 });
+					}
+				} else if (toIndex < fromIndex) {
+					if (toIndex <= tab.index && tab.index < fromIndex) {
+						return Object.assign({}, tab, { index: tab.index + 1 });
+					}
+				}
+				return tab;
+			})(state),
 		[actions.tabs.removed]: (state, { payload: { tabId } }) => S.remove(String(tabId))(state),
 	}, initialState.tabs),
 
@@ -52,12 +76,33 @@ const reducer = combineReducers({
 			S.remove(String(tabId)),
 			S.filter(parentTabId => parentTabId !== tabId),
 		])(state),
+
+		[actions.nesting.setParent]: (state, { payload: { tabId, parentTabId } }) =>
+			(
+				parentTabId ?
+					S.insert(String(tabId))(parentTabId) :
+					S.remove(String(tabId))
+			)(state),
 	}, initialState.nesting),
 
 	collapsed: handleActions({
 		[actions.tabs.toggleCollapsed]: (state, { payload: { tabId } }) =>
 			S.insert(String(tabId))(!state[tabId])(state),
 	}, initialState.collapsed),
+
+	drag: handleActions({
+		[actions.drag.dragOver]: (state, { payload: { tabId, insertionMode } }) => ({
+			targetTabId: tabId,
+			targetTabIsHovered: true,
+			targetInsertionMode: insertionMode,
+		}),
+		[actions.drag.dragLeave]: (state, { payload: { tabId } }) => {
+			if (state.targetTabId === tabId) {
+				return Object.assign({}, state, { targetTabIsHovered: false });
+			}
+			return state;
+		},
+	}, initialState.drag),
 });
 
 module.exports = {

@@ -16,6 +16,7 @@ function tabsMiddleware({ dispatch, getState }) {
 	addDispatchListener(browser.tabs.onUpdated, actions.tabs.updated);
 	addDispatchListener(browser.tabs.onActivated, actions.tabs.activated);
 	addDispatchListener(browser.tabs.onHighlighted, actions.tabs.highlighted);
+	addDispatchListener(browser.tabs.onMoved, actions.tabs.moved);
 	addDispatchListener(browser.tabs.onRemoved, actions.tabs.removed);
 
 	addDispatchListener(browser.tabs.onAttached, actions.tabs.attached);
@@ -27,11 +28,14 @@ function tabsMiddleware({ dispatch, getState }) {
 	})();
 
 	return next => action => {
-		// console.log(action, getState());
+		console.log(action, getState());
 
 		if (action.type === String(actions.tabs.update)) {
 			const { tabId, updateProperties } = action.payload;
 			browser.tabs.update(tabId, updateProperties);
+		} else if (action.type === String(actions.tabs.move)) {
+			const { tabIds, moveProperties } = action.payload;
+			browser.tabs.move(tabIds, moveProperties);
 		}
 
 		return next(action);

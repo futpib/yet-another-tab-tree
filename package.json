@@ -22,9 +22,10 @@
     "xo": "^0.23.0"
   },
   "dependencies": {
-    "preact": "^8.4.2",
-    "preact-r-dom": "^2.4.0",
-    "preact-redux": "^2.0.3",
+    "inferno": "^7.0.5",
+    "inferno-create-element": "^7.0.5",
+    "inferno-r-dom": "^2.4.0",
+    "inferno-redux": "^7.0.5",
     "redux": "^4.0.1",
     "redux-actions": "^2.6.4",
     "reselect": "^4.0.0",
